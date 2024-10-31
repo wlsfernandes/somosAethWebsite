@@ -1,0 +1,34 @@
+version: '2.0'  # Specify the version of the do.yaml format
+name: laravel-app
+
+environment:
+  name: laravel-app
+  region: nyc
+  features:
+    buildpack-stack: ubuntu-18
+
+services:
+  - name: laravel-app
+    github:
+      repo: wlsfernandes/somosAethWebsite  # Your GitHub repository
+      branch: main                          # Branch to deploy
+    build_command: |
+      composer update --ignore-platform-reqs
+      composer install --ignore-platform-reqs --no-dev --optimize-autoloader
+      composer require league/flysystem-ftp
+      composer require aws/aws-sdk-php
+      composer require league/flysystem-aws-s3-v3 "^3.0"
+      cp .env.example .env
+      php artisan key:generate
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    environment:
+      APP_ENV: production  # Environment variable to set Laravel to production mode
+
+  - name: laravel-app-router
+    type: http
+    routes:
+      - path: /
+        service: laravel-app
+        environment_slug: php  # Use PHP runtime for your application
